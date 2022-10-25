@@ -1,36 +1,33 @@
-## cola device plugin
-
-kubernetes device plugin 的开发示例。
-
-## 编译
+## quantum device plugin
+find a quantum device for k8s
+## complie
 
 ```shell
 make build
 ```
 
-## 部署
+## deploy
 
 ```shell
 make deploy
 ```
 
-## 测试
+## test
 
-在节点上 `/etc/colas` 文件夹下创建文件代表我们的 `myway5.cmo/cola` 资源。比如:
-
-```shell
-$ touch cocacola
-$ touch peisicola
-```
-
-为节点添加 label
+create  `/etc/quantum-device` folder and create a file `tgqs.net/quantum-device` in it
 
 ```shell
-$ kubectl label nodes test cola-device=enable
+$ touch quantum001
+```
+
+create  label on node
+
+```shell
+$ kubectl label nodes quantum-device=enable
 ```
 
 ```shell
-kubectl apply -f e2e/pod-with-cola.yaml
+kubectl apply -f e2e/pod-with-quantum.yaml
 ```
 
-然后查看 pod 的调度情况或者查看 pod 日志来检查
+Then check the pod scheduling or look at the pod logs to check
