@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: cola-pod
+  name: quantum-pod
   labels:
-    name: cola-pod
+    name: quantum-pod
 spec:
   containers:
-  - name: cola-pod
+  - name: quantum-pod
     image: nginx:1.14.2
     resources:
       requests:
         memory: "128Mi"
         cpu: "500m"
-        myway5.com/cola: 1
+        myway5.com/quantum: 1
       limits:
         memory: "128Mi"
         cpu: "500m"
-        myway5.com/cola: 1
+        myway5.com/quantum: 1
     ports:
       - containerPort: 80

@@ -12,7 +12,7 @@ import (
 
 func main() {
 	log.Info("cola device plugin starting")
-	colaSrv := server.NewColaServer()
+	colaSrv := server.NewQuantumServer()
 	go colaSrv.Run()
 
 	// 向 kubelet 注册

@@ -20,17 +20,17 @@ import (
 )
 
 const (
-	resourceName        string = "myway5.com/cola"
-	defaultColaLocation string = "/etc/colas"
-	colaSocket          string = "cola.sock"
+	resourceName           string = "tgqs.net/quantum-device"
+	defaultQuantumLocation string = "/etc/quantum"
+	quantumSocket          string = "quantum.sock"
 	// KubeletSocket kubelet 监听 unix 的名称
 	KubeletSocket string = "kubelet.sock"
 	// DevicePluginPath 默认位置
 	DevicePluginPath string = "/var/lib/kubelet/device-plugins/"
 )
 
-// ColaServer 是一个 device plugin server
-type ColaServer struct {
+// QuantumServer 是一个 device plugin server
+type QuantumServer struct {
 	srv         *grpc.Server
 	devices     map[string]*pluginapi.Device
 	notify      chan bool
@@ -39,10 +39,10 @@ type ColaServer struct {
 	restartFlag bool // 本次是否是重启
 }
 
-// NewColaServer 实例化 colaServer
-func NewColaServer() *ColaServer {
+// NewQuantumServer 实例化 QuantumServer
+func NewQuantumServer() *QuantumServer {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &ColaServer{
+	return &QuantumServer{
 		devices:     make(map[string]*pluginapi.Device),
 		srv:         grpc.NewServer(grpc.EmptyServerOption{}),
 		notify:      make(chan bool),
@@ -53,7 +53,7 @@ func NewColaServer() *ColaServer {
 }
 
 // Run 运行服务
-func (s *ColaServer) Run() error {
+func (s *QuantumServer) Run() error {
 	// 发现本地设备
 	err := s.listDevice()
 	if err != nil {
@@ -68,12 +68,12 @@ func (s *ColaServer) Run() error {
 	}()
 
 	pluginapi.RegisterDevicePluginServer(s.srv, s)
-	err = syscall.Unlink(DevicePluginPath + colaSocket)
+	err = syscall.Unlink(DevicePluginPath + quantumSocket)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	l, err := net.Listen("unix", DevicePluginPath+colaSocket)
+	l, err := net.Listen("unix", DevicePluginPath+quantumSocket)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (s *ColaServer) Run() error {
 	}()
 
 	// Wait for server to start by lauching a blocking connection
-	conn, err := s.dial(colaSocket, 5*time.Second)
+	conn, err := s.dial(quantumSocket, 5*time.Second)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (s *ColaServer) Run() error {
 }
 
 // RegisterToKubelet 向kubelet注册device plugin
-func (s *ColaServer) RegisterToKubelet() error {
+func (s *QuantumServer) RegisterToKubelet() error {
 	socketFile := filepath.Join(DevicePluginPath + KubeletSocket)
 
 	conn, err := s.dial(socketFile, 5*time.Second)
@@ -126,7 +126,7 @@ func (s *ColaServer) RegisterToKubelet() error {
 	client := pluginapi.NewRegistrationClient(conn)
 	req := &pluginapi.RegisterRequest{
 		Version:      pluginapi.Version,
-		Endpoint:     path.Base(DevicePluginPath + colaSocket),
+		Endpoint:     path.Base(DevicePluginPath + quantumSocket),
 		ResourceName: resourceName,
 	}
 	log.Infof("Register to kubelet with endpoint %s", req.Endpoint)
@@ -140,7 +140,7 @@ func (s *ColaServer) RegisterToKubelet() error {
 
 // GetDevicePluginOptions returns options to be communicated with Device
 // Manager
-func (s *ColaServer) GetDevicePluginOptions(ctx context.Context, e *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
+func (s *QuantumServer) GetDevicePluginOptions(ctx context.Context, e *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	log.Infoln("GetDevicePluginOptions called")
 	return &pluginapi.DevicePluginOptions{PreStartRequired: true}, nil
 }
@@ -148,7 +148,7 @@ func (s *ColaServer) GetDevicePluginOptions(ctx context.Context, e *pluginapi.Em
 // ListAndWatch returns a stream of List of Devices
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
-func (s *ColaServer) ListAndWatch(e *pluginapi.Empty, srv pluginapi.DevicePlugin_ListAndWatchServer) error {
+func (s *QuantumServer) ListAndWatch(e *pluginapi.Empty, srv pluginapi.DevicePlugin_ListAndWatchServer) error {
 	log.Infoln("ListAndWatch called")
 	devs := make([]*pluginapi.Device, len(s.devices))
 
@@ -190,14 +190,14 @@ func (s *ColaServer) ListAndWatch(e *pluginapi.Empty, srv pluginapi.DevicePlugin
 // Allocate is called during container creation so that the Device
 // Plugin can run device specific operations and instruct Kubelet
 // of the steps to make the Device available in the container
-func (s *ColaServer) Allocate(ctx context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+func (s *QuantumServer) Allocate(ctx context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	log.Infoln("Allocate called")
 	resps := &pluginapi.AllocateResponse{}
 	for _, req := range reqs.ContainerRequests {
 		log.Infof("received request: %v", strings.Join(req.DevicesIDs, ","))
 		resp := pluginapi.ContainerAllocateResponse{
 			Envs: map[string]string{
-				"COLA_DEVICES": strings.Join(req.DevicesIDs, ","),
+				"QUANTUM_DEVICES": strings.Join(req.DevicesIDs, ","),
 			},
 		}
 		resps.ContainerResponses = append(resps.ContainerResponses, &resp)
@@ -208,14 +208,14 @@ func (s *ColaServer) Allocate(ctx context.Context, reqs *pluginapi.AllocateReque
 // PreStartContainer is called, if indicated by Device Plugin during registeration phase,
 // before each container start. Device plugin can run device specific operations
 // such as reseting the device before making devices available to the container
-func (s *ColaServer) PreStartContainer(ctx context.Context, req *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
+func (s *QuantumServer) PreStartContainer(ctx context.Context, req *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	log.Infoln("PreStartContainer called")
 	return &pluginapi.PreStartContainerResponse{}, nil
 }
 
 // listDevice 从节点上发现设备
-func (s *ColaServer) listDevice() error {
-	dir, err := ioutil.ReadDir(defaultColaLocation)
+func (s *QuantumServer) listDevice() error {
+	dir, err := ioutil.ReadDir(defaultQuantumLocation)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (s *ColaServer) listDevice() error {
 	return nil
 }
 
-func (s *ColaServer) watchDevice() error {
+func (s *QuantumServer) watchDevice() error {
 	log.Infoln("watching devices")
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -286,7 +286,7 @@ func (s *ColaServer) watchDevice() error {
 		}
 	}()
 
-	err = w.Add(defaultColaLocation)
+	err = w.Add(defaultQuantumLocation)
 	if err != nil {
 		return fmt.Errorf("watch device error:%v", err)
 	}
@@ -295,7 +295,7 @@ func (s *ColaServer) watchDevice() error {
 	return nil
 }
 
-func (s *ColaServer) dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error) {
+func (s *QuantumServer) dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error) {
 	c, err := grpc.Dial(unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
 		grpc.WithTimeout(timeout),
 		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {

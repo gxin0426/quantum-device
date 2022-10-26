@@ -1,6 +1,6 @@
 FROM alpine:latest
-MAINTAINER jiangpengfei <jiangpengfei12@gmail.com>
+MAINTAINER gx <adam260260@163.com>
 
-COPY ./build/cola /root/cola
+COPY ./build/quantum /root/quantum
 
-CMD ["/root/cola"]
+CMD ["/root/quantum"]

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: device-deploy
+  namespace: device-quantum
+  labels:
+    quantum-device: enable
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      quantum-device: enable
+  template:
+    metadata:
+      labels:
+        quantum-device: enable
+    spec:
+      serviceAccountName: quantum-admin
+      containers:
+        - name: quantum
+          image: gaoxin2020/quantum-device:v0.1
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: devices
+              mountPath: /etc/colas
+      nodeSelector:
+        quantum-device: enable
+      volumes:
+      - name: device-plugin
+        hostPath:
+          type: Directory
+          path: /var/lib/kubelet/device-plugins
+      - name: devices
+        hostPath:
+          type: Directory
+          path: /etc/colas
