@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/joyme123/cola-device-plugin/pkg/server"
+	"quantum-device/pkg/server"
+
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/fsnotify.v1"
 )
