@@ -1,6 +1,6 @@
-IMAGE_VERSION = latest
+IMAGE_VERSION = v0.2
 REGISTRY = docker.io/gaoxin2020
-IMAGE = ${REGISTRY}/quantum-device-plugin:${IMAGE_VERSION}
+IMAGE = ${REGISTRY}/quantum-device:${IMAGE_VERSION}
 
 .PHONY: build deploy
 

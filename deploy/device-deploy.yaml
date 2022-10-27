@@ -19,7 +19,7 @@ spec:
       serviceAccountName: quantum-admin
       containers:
         - name: quantum
-          image: gaoxin2020/quantum-device:v0.1
+          image: gaoxin2020/quantum-device:v0.2
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -32,7 +32,7 @@ spec:
             - name: device-plugin
               mountPath: /var/lib/kubelet/device-plugins
             - name: devices
-              mountPath: /etc/colas
+              mountPath: /opt/quantums
       nodeSelector:
         quantum-device: enable
       volumes:
@@ -43,4 +43,4 @@ spec:
       - name: devices
         hostPath:
           type: Directory
-          path: /etc/colas
+          path: /opt/quantums

@@ -1,4 +1,4 @@
-module github.com/joyme123/cola-device-plugin
+module quantum-device
 
 go 1.13
 
