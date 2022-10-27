@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -21,25 +22,25 @@ import (
 
 const (
 	resourceName           string = "tgqs.net/quantum-device"
-	defaultQuantumLocation string = "/etc/quantum"
+	defaultQuantumLocation string = "/opt/quantum"
 	quantumSocket          string = "quantum.sock"
-	// KubeletSocket kubelet 监听 unix 的名称
+	// KubeletSocket kubelet monitor unix socket
 	KubeletSocket string = "kubelet.sock"
-	// DevicePluginPath 默认位置
+	// DevicePluginPath default position
 	DevicePluginPath string = "/var/lib/kubelet/device-plugins/"
 )
 
-// QuantumServer 是一个 device plugin server
+// QuantumServer is device plugin server
 type QuantumServer struct {
 	srv         *grpc.Server
 	devices     map[string]*pluginapi.Device
 	notify      chan bool
 	ctx         context.Context
 	cancel      context.CancelFunc
-	restartFlag bool // 本次是否是重启
+	restartFlag bool // Is this a reboot
 }
 
-// NewQuantumServer 实例化 QuantumServer
+// NewQuantumServer Instantiates QuantumServer
 func NewQuantumServer() *QuantumServer {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &QuantumServer{
@@ -52,9 +53,9 @@ func NewQuantumServer() *QuantumServer {
 	}
 }
 
-// Run 运行服务
+// Run xx
 func (s *QuantumServer) Run() error {
-	// 发现本地设备
+	// find a new device
 	err := s.listDevice()
 	if err != nil {
 		log.Fatalf("list device error: %v", err)
@@ -213,7 +214,30 @@ func (s *QuantumServer) PreStartContainer(ctx context.Context, req *pluginapi.Pr
 	return &pluginapi.PreStartContainerResponse{}, nil
 }
 
-// listDevice 从节点上发现设备
+func getDeviceApi(url string) (int, error) {
+	return 1, nil
+}
+
+func (s *QuantumServer) listDevice2() error {
+	url := ""
+	// deviceName := "quantum-device01"
+	deviceNums, err := getDeviceApi(url)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < deviceNums; i++ {
+		deviceName := "quantum-device0" + strconv.Itoa(i)
+		sum := md5.Sum([]byte(deviceName))
+		s.devices[deviceName] = &pluginapi.Device{
+			ID:     string(sum[:]),
+			Health: pluginapi.Healthy,
+		}
+	}
+
+	return nil
+
+}
+
 func (s *QuantumServer) listDevice() error {
 	dir, err := ioutil.ReadDir(defaultQuantumLocation)
 	if err != nil {
@@ -237,7 +261,8 @@ func (s *QuantumServer) listDevice() error {
 }
 
 func (s *QuantumServer) watchDevice() error {
-	log.Infoln("watching devices")
+
+	log.Infoln("watching quantum devices")
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("NewWatcher error:%v", err)
@@ -259,7 +284,7 @@ func (s *QuantumServer) watchDevice() error {
 				log.Infoln("device event:", event.Op.String())
 
 				if event.Op&fsnotify.Create == fsnotify.Create {
-					// 创建文件，增加 device
+					// add device
 					sum := md5.Sum([]byte(event.Name))
 					s.devices[event.Name] = &pluginapi.Device{
 						ID:     string(sum[:]),
@@ -268,7 +293,7 @@ func (s *QuantumServer) watchDevice() error {
 					s.notify <- true
 					log.Infoln("new device find:", event.Name)
 				} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-					// 删除文件，删除 device
+					// delete device
 					delete(s.devices, event.Name)
 					s.notify <- true
 					log.Infoln("device deleted:", event.Name)
@@ -296,6 +321,7 @@ func (s *QuantumServer) watchDevice() error {
 }
 
 func (s *QuantumServer) dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error) {
+
 	c, err := grpc.Dial(unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
 		grpc.WithTimeout(timeout),
 		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {

@@ -11,18 +11,20 @@ import (
 )
 
 func main() {
-	log.Info("cola device plugin starting")
-	colaSrv := server.NewQuantumServer()
-	go colaSrv.Run()
 
-	// 向 kubelet 注册
-	if err := colaSrv.RegisterToKubelet(); err != nil {
+	log.Info("quantum device plugin starting")
+
+	quantumSrv := server.NewQuantumServer()
+	go quantumSrv.Run()
+
+	// register to kubelet
+	if err := quantumSrv.RegisterToKubelet(); err != nil {
 		log.Fatalf("register to kubelet error: %v", err)
 	} else {
 		log.Infoln("register to kubelet successfully")
 	}
 
-	// 监听 kubelet.sock，一旦创建则重启
+	// listen kubelet.sock，restarting once created
 	devicePluginSocket := filepath.Join(server.DevicePluginPath, server.KubeletSocket)
 	log.Info("device plugin socket name:", devicePluginSocket)
 	watcher, err := fsnotify.NewWatcher()
